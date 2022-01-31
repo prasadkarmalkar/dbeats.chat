@@ -1,6 +1,8 @@
 const Room = require('../dbeats-backend/models/chat.model');
 const User = require('../dbeats-backend/models/user.model');
 const mongoose = require('mongoose');
+const dotenv = require('dotenv');
+dotenv.config();
 const PORT = process.env.PORT || 5000
 const io = require('socket.io')(PORT,
     {
@@ -12,7 +14,7 @@ const io = require('socket.io')(PORT,
     allowEIO3: true
     }
   );
-const uri = process.env.ATLAS_URI;
+const uri = process.env['ATLAS_URI'];
 mongoose.connect(uri);
   io.on('connection', (socket) => {
     socket.on('joinroom', async ({ user_id, room_id }) => {
