@@ -1,5 +1,5 @@
-const Room = require('../dbeats-backend/models/chat.model');
-const User = require('../dbeats-backend/models/user.model');
+const Room = require('./chat.model');
+const User = require('./chat.model');
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
 dotenv.config();
