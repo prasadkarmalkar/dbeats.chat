@@ -1,9 +1,9 @@
 const Room = require('./chat.model');
-const User = require('./chat.model');
+const User = require('./user.model');
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
 dotenv.config();
-const PORT = process.env.PORT || 5000
+const PORT = process.env.PORT || 80
 const io = require('socket.io')(PORT,
     {
       cors: {
