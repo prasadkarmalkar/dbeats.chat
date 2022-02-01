@@ -25,8 +25,7 @@ const chatSchema = Schema({
         type:String
     },
     reply_to:{
-        type:Schema.Types.ObjectId,
-        ref:'User'
+        type:Object,
     },
     createdAt:{
         type:Date,

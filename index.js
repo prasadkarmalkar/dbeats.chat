@@ -35,7 +35,7 @@ mongoose.connect(uri);
     socket.on('chatMessage', async ({ chat, room_admin }) => {
       try {
         const msgId = new mongoose.Types.ObjectId();
-        const c = {
+        let c = {
           _id: msgId,
           user_id: chat.user_id,
           username: chat.username,
@@ -43,6 +43,9 @@ mongoose.connect(uri);
           type: chat.type,
           message:chat.message,
           createdAt:chat.createdAt
+        }
+        if(chat.reply_to){
+          c.reply_to = chat.reply_to
         }
         Room.findOneAndUpdate(
           { room_admin: room_admin },
