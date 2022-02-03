@@ -44,6 +44,9 @@ mongoose.connect(uri);
           message:chat.message,
           createdAt:chat.createdAt
         }
+        if(chat.url){
+          c.url=chat.url
+        }
         if(chat.reply_to){
           c.reply_to = chat.reply_to
         }
