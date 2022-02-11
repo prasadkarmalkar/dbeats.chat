@@ -7,12 +7,6 @@ const chatSchema = Schema({
         ref:'User',
         required:true
     },
-    username:{
-        type:String
-    },
-    profile_image:{
-        type:String
-    },
     type:{
         type:String,
         required:true,

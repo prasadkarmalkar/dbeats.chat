@@ -21,9 +21,14 @@ mongoose.connect(uri);
       const user = await User.findById(user_id);
       const room = await Room.findOne({ room_admin: room_id });
       const room_user = await User.findById(room_id);
+      let chats = [];
       if (room && user) {
+        room.chats.map(async(c)=>{
+          const u = await User.findById(c.user_id).select({"username":1,"profile_image":1});
+          chats.push({_id:c._id,user_id:c.user_id,username:u.username,profile_image:u.profile_image,type:c.type,message:c.message,createdAt:c.createdAt})
+        })
         await socket.join(room_user._id.toString());
-        socket.emit('init', room.chats);
+        socket.emit('init', chats);
       } else if (user && room_user) {
         const withoutroom = await Room.create({
           room_admin: room_id,
@@ -38,8 +43,6 @@ mongoose.connect(uri);
         let c = {
           _id: msgId,
           user_id: chat.user_id,
-          username: chat.username,
-          profile_image: chat.profile_image,
           type: chat.type,
           message:chat.message,
           createdAt:chat.createdAt
@@ -57,10 +60,13 @@ mongoose.connect(uri);
               chats: c,
             },
           },
-          function (error, success) {
+          async function (error, success) {
             if (error) {
               console.log(error);
             } else {
+              const u = await User.findById(c.user_id).select({"username":1,"profile_image":1});
+              c.username = u.username;
+              c.profile_image = u.profile_image
               io.to(room_admin.toString()).emit('message', c);
             }
           },
