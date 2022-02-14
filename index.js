@@ -14,14 +14,31 @@ const io = require("socket.io")(PORT, {
 });
 const uri = process.env["ATLAS_URI"];
 mongoose.connect(uri);
+
 io.on("connection", (socket) => {
-  socket.on("joinroom", async ({ user_id, room_id }) => {
+
+  let totalChats =0;// 102
+  let pageSize = 15; 
+  let totalPages =0; // 7
+  let currentPage = totalPages; // 7
+  let skip = 0;
+  let oldstart = 0;
+  socket.on("joinroom", async ({ user_id, room_id}) => {
     const user = await User.findById(user_id);
     const room = await Room.findOne({ room_admin: room_id });
+    totalChats = room.chats.length; // 102
+    totalPages = Math.ceil(totalChats / pageSize) || 1; //7
+    currentPage =totalPages;
+    skip = Math.abs((currentPage - totalPages) * pageSize);
+    console.log("total "+ totalChats);
+    console.log("Pages "+ totalPages);
+    console.log(skip)
     const room_user = await User.findById(room_id);
     let chats = [];
+    oldstart = (currentPage*pageSize -pageSize );
     if (room && user) {
-      for (var i = 0; i < room.chats.length; i++) {
+      for (var i = oldstart; i < totalChats - skip; i++) {
+        console.log(i)
         const u = await User.findById(room.chats[i].user_id).select({
           username: 1,
           profile_image: 1,
@@ -44,7 +61,7 @@ io.on("connection", (socket) => {
         chats.push(chattemp);
       }
       await socket.join(room_user._id.toString());
-      socket.emit("init", chats);
+      socket.emit("init", {chats,currentPage,totalPages});
     } else if (user && room_user) {
       const withoutroom = await Room.create({
         room_admin: room_id,
@@ -53,6 +70,52 @@ io.on("connection", (socket) => {
       socket.emit("init", withoutroom.chats);
     }
   });
+  socket.on("loadmore",async({user_id, room_id,page_no})=>{
+    const user = await User.findById(user_id);
+    const room = await Room.findOne({ room_admin: room_id });
+    totalChats = room.chats.length; // 102
+    totalPages = Math.ceil(totalChats / pageSize) || 1; //7
+    currentPage =page_no; //6
+    skip = Math.abs((currentPage - totalPages) * pageSize); // 15
+    console.log("total "+ totalChats);
+    console.log("Pages "+ totalPages);
+    console.log(skip)
+    const room_user = await User.findById(room_id);
+    let chats = [];
+    x =  (currentPage*pageSize -pageSize );
+    if(x<0){
+      x=0;
+    }
+
+    if (room && user) {
+      for (var i =x; i < oldstart; i++) {
+        console.log(i)
+        const u = await User.findById(room.chats[i].user_id).select({
+          username: 1,
+          profile_image: 1,
+        });
+        oldstart = x;
+        let chattemp = {
+          _id: room.chats[i]._id,
+          user_id: room.chats[i].user_id,
+          username: u.username,
+          profile_image: u.profile_image,
+          type: room.chats[i].type,
+          message: room.chats[i].message,
+          createdAt: room.chats[i].createdAt,
+        };
+        if (room.chats[i].url) {
+          chattemp.url = room.chats[i].url;
+        }
+        if (room.chats[i].reply_to) {
+          chattemp.reply_to = room.chats[i].reply_to;
+        }
+        chats.push(chattemp);
+      }
+      await socket.join(room_user._id.toString());
+      socket.emit("getmore", {chats,totalPages,currentPage});
+    }
+  })
   socket.on("chatMessage", async ({ chat, room_admin }) => {
     try {
       const msgId = new mongoose.Types.ObjectId();
