@@ -17,28 +17,28 @@ mongoose.connect(uri);
 
 io.on("connection", (socket) => {
 
-  let totalChats =0;// 102
-  let pageSize = 15; 
-  let totalPages =0; // 7
-  let currentPage = totalPages; // 7
+  let totalChats =0;// 100
+  let pageSize = 10; 
+  let totalPages =0; // 10
+  let currentPage = totalPages; // 10
   let skip = 0;
   let oldstart = 0;
   socket.on("joinroom", async ({ user_id, room_id}) => {
     const user = await User.findById(user_id);
     const room = await Room.findOne({ room_admin: room_id });
-    totalChats = room.chats.length; // 102
-    totalPages = Math.ceil(totalChats / pageSize) || 1; //7
+    totalChats = room.chats.length; // 100
+    totalPages = Math.ceil(totalChats / pageSize) || 1; //10
     currentPage =totalPages;
     skip = Math.abs((currentPage - totalPages) * pageSize);
-    console.log("total "+ totalChats);
-    console.log("Pages "+ totalPages);
-    console.log(skip)
+    // console.log("total "+ totalChats);
+    // console.log("Pages "+ totalPages);
+    // console.log(skip)
     const room_user = await User.findById(room_id);
     let chats = [];
     oldstart = (currentPage*pageSize -pageSize );
     if (room && user) {
       for (var i = oldstart; i < totalChats - skip; i++) {
-        console.log(i)
+        // console.log(i)
         const u = await User.findById(room.chats[i].user_id).select({
           username: 1,
           profile_image: 1,
@@ -73,13 +73,14 @@ io.on("connection", (socket) => {
   socket.on("loadmore",async({user_id, room_id,page_no})=>{
     const user = await User.findById(user_id);
     const room = await Room.findOne({ room_admin: room_id });
-    totalChats = room.chats.length; // 102
-    totalPages = Math.ceil(totalChats / pageSize) || 1; //7
-    currentPage =page_no; //6
-    skip = Math.abs((currentPage - totalPages) * pageSize); // 15
-    console.log("total "+ totalChats);
-    console.log("Pages "+ totalPages);
-    console.log(skip)
+    totalChats = room.chats.length; // 100
+    totalPages = Math.ceil(totalChats / pageSize) || 1; //10
+    currentPage =page_no; //9
+    skip = Math.abs((currentPage - totalPages) * pageSize); // 10
+    // console.log("total "+ totalChats);
+    // console.log("Pages "+ totalPages);
+    // console.log(skip)
+    // console.log(oldstart);
     const room_user = await User.findById(room_id);
     let chats = [];
     x =  (currentPage*pageSize -pageSize );
@@ -88,13 +89,16 @@ io.on("connection", (socket) => {
     }
 
     if (room && user) {
+      // console.log("X "+x)
+      // console.log("oldstart "+oldstart)
+
       for (var i =x; i < oldstart; i++) {
-        console.log(i)
+        // console.log(i)
         const u = await User.findById(room.chats[i].user_id).select({
           username: 1,
           profile_image: 1,
         });
-        oldstart = x;
+
         let chattemp = {
           _id: room.chats[i]._id,
           user_id: room.chats[i].user_id,
@@ -112,6 +116,7 @@ io.on("connection", (socket) => {
         }
         chats.push(chattemp);
       }
+      oldstart = x;
       await socket.join(room_user._id.toString());
       socket.emit("getmore", {chats,totalPages,currentPage});
     }
