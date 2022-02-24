@@ -26,7 +26,7 @@ io.on("connection", (socket) => {
   socket.on("joinroom", async ({ user_id, room_id}) => {
     const user = await User.findById(user_id);
     const room = await Room.findOne({ room_admin: room_id });
-    totalChats = room.chats.length; // 100
+    totalChats = room ? room.chats.length : 0 ; // 100
     totalPages = Math.ceil(totalChats / pageSize) || 1; //10
     currentPage =totalPages;
     skip = Math.abs((currentPage - totalPages) * pageSize);
@@ -67,7 +67,7 @@ io.on("connection", (socket) => {
         room_admin: room_id,
         chats: [],
       });
-      socket.emit("init", withoutroom.chats);
+      socket.emit("init", {chats:withoutroom.chats,currentPage,totalPages});
     }
   });
   socket.on("loadmore",async({user_id, room_id,page_no})=>{
