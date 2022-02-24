@@ -1,5 +1,6 @@
 const Room = require("./chat.model");
 const User = require("./user.model");
+const LiveRoom = require('./livechat.model');
 const mongoose = require("mongoose");
 const dotenv = require("dotenv");
 dotenv.config();
@@ -157,6 +158,60 @@ io.on("connection", (socket) => {
             io.to(room_admin.toString()).emit("message", c);
           }
         }
+      );
+    } catch (error) {
+      console.log(error);
+    }
+  });
+
+
+  // For Live Chat 
+  socket.on('live_joinroom', async ({ user_id, room_id }) => {
+    const user = await User.findById(user_id);
+    const room = await LiveRoom.findOne({ room_admin: room_id });
+    const room_user = await User.findById(room_id);
+    if (room && user) {
+      await socket.join("live_"+room_user._id.toString());
+      socket.emit('live_init', room.chats);
+    } else if (user && room_user) {
+      const withoutroom = await LiveRoom.create({
+        room_admin: room_id,
+        chats: [],
+      });
+      socket.emit('live_init', withoutroom.chats);
+    }
+  });
+  socket.on('live_chatMessage', async ({ chat, room_admin }) => {
+    try {
+      const msgId = new mongoose.Types.ObjectId();
+      let c = {
+        _id: msgId,
+        user_id: chat.user_id,
+        username: chat.username,
+        profile_image: chat.profile_image,
+        type: chat.type,
+        message:chat.message,
+        createdAt:chat.createdAt
+      }
+      if(chat.reply_to){
+        c.reply_to = chat.reply_to
+      }
+      console.log(c)
+      LiveRoom.findOneAndUpdate(
+        { room_admin: room_admin },
+        {
+          $push: {
+            chats: c,
+          },
+        },
+        function (error, success) {
+          if (error) {
+            console.log(error);
+          } else {
+            console.log()
+            io.to("live_"+room_admin.toString()).emit('live_message', c);
+          }
+        },
       );
     } catch (error) {
       console.log(error);
